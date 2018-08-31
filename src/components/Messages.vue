@@ -1,6 +1,7 @@
 <template>
     <div class="messages-canvas-container" ref="container">
         <canvas ref="canvas" @mouseenter="cancleAnimation" @mouseleave="draw"></canvas>
+        <input type="range" min="0" max="20" style="position: absolute; top: 420px;display:inline-block;" v-model="speed">
     </div>
 </template>
 <script>
@@ -12,6 +13,7 @@ export default {
       canvas: null,
       w: 0,
       h: 0,
+      speed: 3,
       ctx: null,
       data: [],
       messageList: []
@@ -37,7 +39,6 @@ export default {
       this.ctx = this.canvas.getContext('2d')
       this.ctx.font = '20px Microsoft YaHei'
       this.messageList = []
-      this.speed = 0.3 // 移动量
       this.maxy = null
       this.style = {
         fillColor: '#4760ff',
@@ -93,7 +94,7 @@ export default {
             continue
           }
           message.draw(this.ctx)
-          message.y -= this.speed
+          message.y -= this.speed / 10
         }
       }
       this.requestId = requestAnimationFrame(this.draw.bind(this))

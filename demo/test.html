@@ -1,0 +1,163 @@
+<html>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+<body>
+	<div style="position:relative;width:500px;height:400px;text-align:center;" id="app">
+		<canvas id="canvas" width="500" height="400" style="position:absolute;top:0;left:0;background-color: #4760ff" @mouseenter="stop"
+		 @mouseleave="start">
+			您的浏览器不支持canvas标签。
+		</canvas>
+
+	</div>
+
+	<script>
+		class Message {
+			constructor(message, x, y, width, height, style, attr) {
+				this.message = message || {};
+				this.x = x;
+				this.y = y;
+				this.width = width;
+				this.height = height;
+				this.style = style || {};
+				this.attr = attr || {};
+			}
+
+			draw(ctx) {
+				if (!ctx) {
+					return;
+				}
+
+				ctx.save();
+				ctx.beginPath();
+				ctx.fillStyle = this.style.fillColor || '#fff';
+				ctx.strokeStyle = '#fff';
+				ctx.rect(this.x, this.y, this.width, this.height)
+				ctx.stroke();
+				ctx.closePath();
+				ctx.beginPath();
+				ctx.fillStyle = this.style.color || '#black';
+				ctx.fillText(this.message.title, this.x + 15, this.y + 30);
+				ctx.fillText(this.message.text, this.x + 15, this.y + 30 + 35);
+				ctx.closePath();
+				ctx.restore();
+			}
+		}
+
+		class View {
+			constructor(canvas) {
+				this.canvas = document.getElementById(canvas);
+				let rect = this.canvas.getBoundingClientRect();
+				this.w = rect.right - rect.left;
+				this.h = rect.bottom - rect.top;
+				this.ctx = this.canvas.getContext('2d');
+				this.ctx.font = '20px Microsoft YaHei';
+				this.messageList = [];
+				this.speed = 0.3; // 移动量
+				this.maxy = null;
+				this.style = {
+					fillColor: '#4760ff',
+					color: '#fff',
+					height: 80
+				}
+			}
+
+			loadData(data) {
+				if (!data) {
+					return;
+				}
+
+				this.data = data;
+
+				data.forEach((item, index) => {
+					this.addItem(item);
+				});
+
+				this.draw();
+			}
+
+			//添加弹幕列表
+			addItem(item) {
+				const height = this.style.height;
+				const x = 0;
+				let y;
+				if (this.maxy === null) {
+					this.maxy = 0;
+					y = this.maxy
+				} else {
+					y = this.maxy + height;
+					this.maxy = y;
+				}
+
+				const message = new Message(item, x, y, this.w, height, this.style);
+				this.messageList.push(message);
+			}
+
+			//开始绘制
+			draw() {
+				if (this.messageList.length) {
+					this.ctx.clearRect(0, 0, this.w, this.h);
+					const maxy = this.maxy > this.h ? this.maxy : this.h;
+					for (let i = 0; i < this.messageList.length; i++) {
+						const message = this.messageList[i];
+						if (message.y + message.height < 0) {
+							message.y = maxy;
+							continue;
+						}
+						message.draw.call(message, this.ctx);
+						message.y -= this.speed;
+					}
+				}
+				this.requestId = requestAnimationFrame(this.draw.bind(this));
+			}
+
+
+			cancleAnimation() {
+				cancelAnimationFrame(this.requestId);
+			}
+
+			setData(data) {
+				this.data = data;
+				this.maxy = null;
+				this.loadData(data);
+			}
+		}
+
+		var app = new Vue({
+			el: '#app',
+			data: {
+				message: 'Hello Vue!',
+				view: null
+			},
+			mounted() {
+				this.$nextTick(function () {
+					this.init()
+				})
+			},
+			methods: {
+				init() {
+					const view = new View('canvas');
+					const textList = [
+						{ title: 'javascript', text: 'here is javascript descript' },
+						{ title: 'html', text: 'here is html descript' },
+						{ title: 'css', text: 'here is css descript' },
+						{ title: '前端框架', text: 'here is 前端框架 descript' },
+						{ title: 'Vue', text: 'here is Vue descript' },
+						{ title: 'React', text: 'here is React descript' }
+					];
+					view.loadData(textList);
+					this.view = view;
+				},
+
+				stop() {
+					this.view.cancleAnimation();
+				},
+
+				start() {
+					this.view.draw();
+				}
+			}
+		})
+	</script>
+</body>
+
+</html>
